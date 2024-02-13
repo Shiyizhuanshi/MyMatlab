@@ -53,7 +53,16 @@ title('4-DOF Robot Arm Movement');
 % Loop through each point and calculate end-effector position
 for i = 1:num_points
 
-    cla;
+    % Find all graphics objects in the current axis
+    all_objects = findobj(gca, 'Type', 'line', '-or', 'Type', 'text', '-or', 'Type', 'surface', '-or', 'Type', 'patch', '-or', 'Type', 'hggroup');
+
+    % Exclude the end effector from the list of objects to delete
+    end_effector_object = findobj(all_objects, 'Tag', 'EndEffector');
+    objects_to_delete = setdiff(all_objects, end_effector_object);
+
+    % Delete objects other than the end effector
+    delete(objects_to_delete);
+
     % Transformation matrices
     T1 = dh_matrix(a(1), alpha(1), d(1), theta1(i));
     T2 = dh_matrix(a(2), alpha(2), d(2), theta2(i));
@@ -81,9 +90,9 @@ for i = 1:num_points
     plot3([link1_end(1), link2_end(1), link3_end(1)], ...
           [link1_end(2), link2_end(2), link3_end(2)], ...
           [link1_end(3), link2_end(3), link3_end(3)], 'bo-', 'MarkerSize', 8);
-
+    
     % Plot end effector as a red hollow circle
-    plot3(end_effector_position(1), end_effector_position(2), end_effector_position(3), 'ro', 'MarkerSize', 10, 'MarkerFaceColor', 'w');
+    plot3(end_effector_position(1), end_effector_position(2), end_effector_position(3), 'ro-', 'MarkerSize', 10, 'MarkerFaceColor', 'w', 'Tag', 'EndEffector');
     
     % Update the figure window
     drawnow;
