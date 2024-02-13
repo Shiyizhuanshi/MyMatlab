@@ -55,11 +55,11 @@ showdetails(robot)
 %% Define The Trajectory
 % Define a circle to be traced over the course of 10 seconds. This circle
 % is in the _xy_ plane with a radius of 0.15.
-t = (0:0.2:10)'; % Time
+t = (0:0.2:20)'; % Time
 count = length(t);
 center = [0.3 0.1 0];
 radius = 0.15;
-theta = t*(2*pi/t(end));
+theta = 2*t*(2*pi/t(end));
 points = center + radius*[cos(theta) sin(theta) zeros(size(theta))];
 
 %% Inverse Kinematics Solution
@@ -120,7 +120,7 @@ axis([-0.1 0.7 -0.3 0.5])
 % trajectory at a fixed rate of 15 frames per second. Show the robot in
 % each configuration from the inverse kinematic solver. Watch as the arm
 % traces the circular trajectory shown.
-framesPerSecond = 15;
+framesPerSecond = 30;
 r = rateControl(framesPerSecond);
 for i = 1:count
     show(robot,qs(i,:)','PreservePlot',false);
