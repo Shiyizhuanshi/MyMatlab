@@ -1,14 +1,15 @@
 clear
 
-L1 = 5;
-L2 = 5;
-L3 = 5;
-L4 = 3;
+L1 = 43;
+L2 = 130;
+L3 = 124;
+L4 = 126;
 
+thetaOffset = asin(24/130);
 % Define Denavit-Hartenberg parameters
 a = [0, L2, L3, L4];  % Link lengths
 alpha = [pi/2, 0, 0, 0];  % Link twists
-d = [0, 0, 0, 0];  % Joint offsets
+d = [77, 0, 0, 0];  % Joint offsets
 
 %link_colors = {'b-', 'g-', 'm-', 'c-'};
 link_colors = {'m-','k-', 'b-', 'g-'};
@@ -30,8 +31,8 @@ theta4_desire_end = -pi/2;
 
 % Initialize joint angles
 theta1 = linspace(theta1_desire_start, theta1_desire_end, num_points);
-theta2 = linspace(theta2_desire_start, theta2_desire_end, num_points);
-theta3 = linspace(theta3_desire_start, theta3_desire_end, num_points);
+theta2 = linspace(theta2_desire_start+thetaOffset, theta2_desire_end+thetaOffset, num_points);
+theta3 = linspace(theta3_desire_start-thetaOffset, theta3_desire_end-thetaOffset, num_points);
 theta4 = linspace(theta4_desire_start, theta4_desire_end, num_points);
 
 
@@ -41,7 +42,7 @@ default_fig_position = [500, 300, 1200, 1000]; % [left, bottom, width, height]
 figure('Position', default_fig_position);
 hold on;
 axis equal;
-axis([-15, 15, -15, 15, -15, 15]);
+axis([-500, 500, -500, 500, -500, 500]);
 % Set the view perspective for 3D
 view(3);
 grid on;
@@ -64,10 +65,10 @@ for i = 1:num_points
     delete(objects_to_delete);
 
     % Transformation matrices
-    T1 = dh_matrix(a(1), alpha(1), d(1), theta1(i));
-    T2 = dh_matrix(a(2), alpha(2), d(2), theta2(i));
-    T3 = dh_matrix(a(3), alpha(3), d(3), theta3(i));
-    T4 = dh_matrix(a(4), alpha(4), d(4), theta4(i));
+    T1 = dh_matrix_3d(a(1), alpha(1), d(1), theta1(i));
+    T2 = dh_matrix_3d(a(2), alpha(2), d(2), theta2(i));
+    T3 = dh_matrix_3d(a(3), alpha(3), d(3), theta3(i));
+    T4 = dh_matrix_3d(a(4), alpha(4), d(4), theta4(i));
 
     % Calculate link end points
     link1_end = T1 * [0; 0; 0; 1];
@@ -98,15 +99,15 @@ for i = 1:num_points
     drawnow;
 
     % Pause to create animation effect
-    pause(0.1);
+    pause(0.01);
 end
 
 hold off;
 
 
 
-function A = dh_matrix(a, alpha, d, theta)
-    A = [cos(theta), -sin(theta)*cos(alpha), sin(theta)*sin(alpha), a*cos(theta);
+function dh_matrix_3d = dh_matrix_3d(a, alpha, d, theta)
+    dh_matrix_3d = [cos(theta), -sin(theta)*cos(alpha), sin(theta)*sin(alpha), a*cos(theta);
          sin(theta), cos(theta)*cos(alpha), -cos(theta)*sin(alpha), a*sin(theta);
          0, sin(alpha), cos(alpha), d;
          0, 0, 0, 1];
