@@ -37,11 +37,11 @@ y2 = linspace(200, 200, num_points);
 z2 = ones(num_points)*77;
 
 % 定义正方形的边长和点的个数
-side_length = 100;
+side_length = 400;
 num_points_per_side = num_points/4;
 
 %left bottom corner
-C = [100, -100];
+C = [-200, -200];
 
 % 创建正方形边上的点集
 x3 = [];
@@ -63,7 +63,6 @@ y3 = [y3, C(2) + side_length * ones(1, num_points_per_side)];
 x3 = [x3, linspace(C(1), C(1), num_points_per_side)];
 y3 = [y3, linspace(C(2) + side_length, C(2), num_points_per_side)];
 
-z3 = -ones(1, num_points)*200;
 % T_3d = [200, 50, 77];
 
 x4 = linspace(250, 250, num_points);
@@ -93,14 +92,7 @@ for i = 1:num_points
     
     % plot3(x4, y4, z4, 'r-', 'LineWidth', 3);
 
-    %circle
-    % T_3d = [x1(i), y1(i), z1(i)];
-
-    %line
-    % T_3d = [x4(i), y4(i), z4(i)];
-
-    %square
-    T_3d = [z3(i), y3(i), x3(i)];
+    T_3d = [y1(i), y1(i), z1(i)];
     theta1 = atan2(T_3d(2), T_3d(1));
 
     % T_2d = [T_3d(1), T_3d(3)-d(1)];
