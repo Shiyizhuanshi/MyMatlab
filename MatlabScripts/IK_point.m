@@ -26,7 +26,7 @@ link_colors = {'m-','k-', 'b-', 'g-'};
 % circle radius
 radius = 150;  %radius
 center = [0, 0];  % center
-num_points = 400;
+num_points = 40;
 theta = linspace(0, 2*pi, num_points);
 x1 = center(1) + radius * cos(theta);
 y1 = center(2) + radius * sin(theta);
@@ -37,33 +37,22 @@ y2 = linspace(200, 200, num_points);
 z2 = ones(num_points)*77;
 
 % 定义正方形的边长和点的个数
-side_length = 100;
+side_length = 150;
 num_points_per_side = num_points/4;
 
 %left bottom corner
-C = [100, -100];
+C_1 = [50, -100];
+C_2 = [-100, -100];
+C_3 = [-100, -100];
 
-% 创建正方形边上的点集
-x3 = [];
-y3 = [];
 
-% 添加下边
-x3 = [x3, linspace(C(1), C(1)+side_length, num_points_per_side)];
-y3 = [y3, linspace(C(2), C(2), num_points_per_side)];
+[x3_1, y3_1] = generateSquarePoints(C_1, side_length, num_points_per_side);
+[x3_2, y3_2] = generateSquarePoints(C_2, side_length, num_points_per_side);
+[x3_3, y3_3] = generateSquarePoints(C_1, side_length, num_points_per_side);
 
-% 添加右边
-x3 = [x3, C(1)+side_length * ones(1, num_points_per_side)];
-y3 = [y3, linspace(C(2),C(2) + side_length, num_points_per_side)];
-
-% 添加上边
-x3 = [x3, linspace(C(1) + side_length, C(1), num_points_per_side)];
-y3 = [y3, C(2) + side_length * ones(1, num_points_per_side)];
-
-% 添加左边
-x3 = [x3, linspace(C(1), C(1), num_points_per_side)];
-y3 = [y3, linspace(C(2) + side_length, C(2), num_points_per_side)];
-
-z3 = -ones(1, num_points)*200;
+z3_1 = -ones(1, num_points)*200;
+z3_2 = ones(1, num_points)*200;
+z3_3 = -ones(1, num_points)*200;
 % T_3d = [200, 50, 77];
 
 x4 = linspace(250, 250, num_points);
@@ -88,8 +77,15 @@ ylabel('Y-axis');
 zlabel('Z-axis');
 title('4-DOF Robot Arm Movement');
 
+
 % Loop through each point and calculate end-effector position
-for i = 1:num_points
+num_points_total = 120;
+
+x3 = [z3_1 x3_2 y3_3];
+y3 = [y3_1 y3_2 z3_3];
+z3 = [x3_1 z3_2 x3_3];
+% for i = 1:num_points
+for i = 1:num_points_total
     
     % plot3(x4, y4, z4, 'r-', 'LineWidth', 3);
 
@@ -100,7 +96,8 @@ for i = 1:num_points
     % T_3d = [x4(i), y4(i), z4(i)];
 
     %square
-    T_3d = [z3(i), y3(i), x3(i)];
+    T_3d = [x3(i), y3(i), z3(i)];
+    % T_3d = [100, 100, 0];
     theta1 = atan2(T_3d(2), T_3d(1));
 
     % T_2d = [T_3d(1), T_3d(3)-d(1)];
@@ -166,18 +163,18 @@ hold off;
 
 
 function [jointA_angle, jointB_angle, jointC_angle] = IK(T_2d, T_angle_initial_guess, AB, BC, CT, jointA_limit, jointB_limit, jointC_limit)
+    T_angle_guess_step = 0.1;
+    old_jointB_angle = 0;
     iteration = 1;
+    avoid_sigularity_mode = 0;
     while iteration <= 4000
-        
         %get the position of C
         pos_C = [T_2d(1) - CT * cos(T_angle_initial_guess), T_2d(2) - CT * sin(T_angle_initial_guess)];
         AC = sqrt((pos_C(1))^2 + (pos_C(2))^2);
-        % fprintf('pos_C: %d, %d\n', pos_C(1), pos_C(2));
-        % fprintf('The AC: %d, AB + BC: %d\n', AC, AB + BC);
 
         % Check AC First    
         if AC > AB + BC
-            T_angle_initial_guess = T_angle_initial_guess + deg2rad(0.1);
+            T_angle_initial_guess = T_angle_initial_guess + deg2rad(T_angle_guess_step);
             iteration = iteration + 1;
             % fprintf('AC is greater than AB + BC in iteration: %d\n', iteration);
             continue;
@@ -185,6 +182,8 @@ function [jointA_angle, jointB_angle, jointC_angle] = IK(T_2d, T_angle_initial_g
             % check no joint angle is out of limit
             AC_angle = atan2(pos_C(2), pos_C(1));
             jointB_angle = acos((AC^2 - AB^2 - BC^2)/(2*AB*BC));
+            %where sigularity happens 
+            % avoid the singularity
             if(jointB_angle>0)
                 jointA_angle = AC_angle - asin(BC*sin(jointB_angle)/AC);
             else
@@ -198,14 +197,28 @@ function [jointA_angle, jointB_angle, jointC_angle] = IK(T_2d, T_angle_initial_g
             if jointA_angle < jointA_limit(1) || jointA_angle > jointA_limit(2) || ...
                 jointB_angle < jointB_limit(1) || jointB_angle > jointB_limit(2) || ...
                 jointC_angle < jointC_limit(1) || jointC_angle > jointC_limit(2)
+
                 fprintf('Joint angle out of limit in iteration: %d\n', iteration);
-                T_angle_initial_guess = T_angle_initial_guess + deg2rad(1);
+                T_angle_initial_guess = T_angle_initial_guess + deg2rad(T_angle_guess_step);
                 iteration = iteration + 1;
+                continue;
             else
                 fprintf('T_angle_initial_guess: %f\n', T_angle_initial_guess);
                 fprintf('jointA_angle: %f, jointB_angle: %f, jointC_angle: %f\n', ...
                     (jointA_angle), (jointB_angle), (jointC_angle));
                 break;
+%                 if avoid_sigularity_mode == 1
+%                     if sign(jointB_angle) == sign(old_jointB_angle)
+%                         break;
+%                     else
+%                         old_jointB_angle = jointB_angle;
+%                         T_angle_initial_guess = T_angle_initial_guess + deg2rad(T_angle_guess_step);
+%                         iteration = iteration + 1;
+%                         continue;
+%                     end
+%                 else
+%                     break;
+%                 end
             end
         end
     end
@@ -227,4 +240,25 @@ function dh_matrix_3d = dh_matrix_3d(a, alpha, d, theta)
          sin(theta), cos(theta)*cos(alpha), -cos(theta)*sin(alpha), a*sin(theta);
          0, sin(alpha), cos(alpha), d;
          0, 0, 0, 1];
+end
+
+function [x, y] = generateSquarePoints(C, side_length, num_points_per_side)
+    x = [];
+    y = [];
+
+    % bottom
+    x = [x, linspace(C(1), C(1)+side_length, num_points_per_side)];
+    y = [y, linspace(C(2), C(2), num_points_per_side)];
+
+    % right
+    x = [x, C(1)+side_length * ones(1, num_points_per_side)];
+    y = [y, linspace(C(2),C(2) + side_length, num_points_per_side)];
+
+    % top
+    x = [x, linspace(C(1) + side_length, C(1), num_points_per_side)];
+    y = [y, C(2) + side_length * ones(1, num_points_per_side)];
+
+    % left
+    x = [x, linspace(C(1), C(1), num_points_per_side)];
+    y = [y, linspace(C(2) + side_length, C(2), num_points_per_side)];
 end
