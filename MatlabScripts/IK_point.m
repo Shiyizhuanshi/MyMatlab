@@ -97,14 +97,10 @@ for i = 1:num_points_total
 
     %square
     T_3d = [x3(i), y3(i), z3(i)];
-    % T_3d = [100, 100, 0];
-    theta1 = atan2(T_3d(2), T_3d(1));
-
-    % T_2d = [T_3d(1), T_3d(3)-d(1)];
-    T_2d = [sqrt(T_3d(1)^2 + T_3d(2)^2), T_3d(3)-d(1)];
-    fprintf('T_2d: %f, %f\n', T_2d(1), T_2d(2));
+    % T_3d = [100,100,100];
+    
     T_angle_initial_guess = -pi;
-    [theta2, theta3, theta4] = IK(T_2d, T_angle_initial_guess, AB, BC, CT, jointA_limit, jointB_limit, jointC_limit);
+    [theta1, theta2, theta3, theta4] = IK(T_3d, T_angle_initial_guess, 77, AB, BC, CT, [-pi,pi],jointA_limit, jointB_limit, jointC_limit);
 
 
     % Find all graphics objects in the current axis
@@ -162,41 +158,44 @@ hold off;
 
 
 
-function [jointA_angle, jointB_angle, jointC_angle] = IK(T_2d, T_angle_initial_guess, AB, BC, CT, jointA_limit, jointB_limit, jointC_limit)
+function [joint1_angle, joint2_angle, joint3_angle, joint4_angle] = ...
+    IK(T_3d, T_angle_initial_guess, L12, L23, L34, L45, joint1_limit, joint2_limit, joint3_limit, joint4_limit)
+
     T_angle_guess_step = 0.1;
-    old_jointB_angle = 0;
+    old_joint3_angle = 0;
     iteration = 1;
     avoid_sigularity_mode = 0;
+
+    joint1_angle = atan2(T_3d(2), T_3d(1));
+    T_2d = [sqrt(T_3d(1)^2 + T_3d(2)^2), T_3d(3)-L12];
+
     while iteration <= 4000
         %get the position of C
-        pos_C = [T_2d(1) - CT * cos(T_angle_initial_guess), T_2d(2) - CT * sin(T_angle_initial_guess)];
-        AC = sqrt((pos_C(1))^2 + (pos_C(2))^2);
+        pos_C = [T_2d(1) - L45 * cos(T_angle_initial_guess), T_2d(2) - L45 * sin(T_angle_initial_guess)];
+        L24 = sqrt((pos_C(1))^2 + (pos_C(2))^2);
 
         % Check AC First    
-        if AC > AB + BC
+        if L24 > L12 + L23
             T_angle_initial_guess = T_angle_initial_guess + deg2rad(T_angle_guess_step);
             iteration = iteration + 1;
             % fprintf('AC is greater than AB + BC in iteration: %d\n', iteration);
             continue;
         else
             % check no joint angle is out of limit
-            AC_angle = atan2(pos_C(2), pos_C(1));
-            jointB_angle = acos((AC^2 - AB^2 - BC^2)/(2*AB*BC));
+            L24_angle = atan2(pos_C(2), pos_C(1));
+            joint3_angle = acos((L24^2 - L23^2 - L34^2)/(2*L23*L34));
             %where sigularity happens 
             % avoid the singularity
-            if(jointB_angle>0)
-                jointA_angle = AC_angle - asin(BC*sin(jointB_angle)/AC);
+            if(joint3_angle>0)
+                joint2_angle = L24_angle - asin(L34*sin(joint3_angle)/L24);
             else
-                jointA_angle = AC_angle + asin(BC*sin(jointB_angle)/AC);
+                joint2_angle = L24_angle + asin(L34*sin(joint3_angle)/L24);
             end
-            jointC_angle = T_angle_initial_guess-jointA_angle-jointB_angle;
-            % jointA_angle = asin(S/(AB*AC)) + AC_angle;
-            % jointB_angle = asin(S/(AB*BC));
-            % jointC_angle = T_angle_initial_guess - jointA_angle - jointB_angle;
-            
-            if jointA_angle < jointA_limit(1) || jointA_angle > jointA_limit(2) || ...
-                jointB_angle < jointB_limit(1) || jointB_angle > jointB_limit(2) || ...
-                jointC_angle < jointC_limit(1) || jointC_angle > jointC_limit(2)
+            joint4_angle = T_angle_initial_guess-joint2_angle-joint3_angle;
+
+            if joint2_angle < joint2_limit(1) || joint2_angle > joint2_limit(2) || ...
+                joint3_angle < joint3_limit(1) || joint3_angle > joint3_limit(2) || ...
+                joint4_angle < joint4_limit(1) || joint4_angle > joint4_limit(2)
 
                 fprintf('Joint angle out of limit in iteration: %d\n', iteration);
                 T_angle_initial_guess = T_angle_initial_guess + deg2rad(T_angle_guess_step);
@@ -204,14 +203,14 @@ function [jointA_angle, jointB_angle, jointC_angle] = IK(T_2d, T_angle_initial_g
                 continue;
             else
                 fprintf('T_angle_initial_guess: %f\n', T_angle_initial_guess);
-                fprintf('jointA_angle: %f, jointB_angle: %f, jointC_angle: %f\n', ...
-                    (jointA_angle), (jointB_angle), (jointC_angle));
+                fprintf('joint2_angle: %f, joint3_angle: %f, joint4_angle: %f\n', ...
+                    (joint2_angle), (joint3_angle), (joint4_angle));
                 break;
 %                 if avoid_sigularity_mode == 1
-%                     if sign(jointB_angle) == sign(old_jointB_angle)
+%                     if sign(joint3_angle) == sign(old_joint3_angle)
 %                         break;
 %                     else
-%                         old_jointB_angle = jointB_angle;
+%                         old_joint3_angle = joint3_angle;
 %                         T_angle_initial_guess = T_angle_initial_guess + deg2rad(T_angle_guess_step);
 %                         iteration = iteration + 1;
 %                         continue;
