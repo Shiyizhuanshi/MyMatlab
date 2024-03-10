@@ -1,25 +1,26 @@
 clear
 
-AB = 100;
-BC = 100;
-CT = 100;
 
-jointA_limit = [-pi, pi];
-jointB_limit = [-pi, pi];
-jointC_limit = [-pi, pi];
+joint1_limit = [deg2rad(30), deg2rad(330)];
+joint2_limit = [deg2rad(100), deg2rad(330)];
+joint3_limit = [deg2rad(30), deg2rad(330)];
+joint4_limit = [deg2rad(30), deg2rad(330)];
 
+L1 = 77;
+L2 = 130;
+L3 = 124;
+L4 = 126;
 
-
-L1 = 43;
-L2 = 100;
-L3 = 100;
-L4 = 100;
+% L1 = 77;
+% L2 = 100;
+% L3 = 100;
+% L4 = 100;
 
 thetaOffset = asin(24/130);
 % Define Denavit-Hartenberg parameters
 a = [0, L2, L3, L4];  % Link lengths
 alpha = [pi/2, 0, 0, 0];  % Link twists
-d = [77, 0, 0, 0];  % Joint offsets
+d = [L1, 0, 0, 0];  % Joint offsets
 
 link_colors = {'m-','k-', 'b-', 'g-'};
 
@@ -84,6 +85,8 @@ num_points_total = 120;
 x3 = [z3_1 x3_2 y3_3];
 y3 = [y3_1 y3_2 z3_3];
 z3 = [x3_1 z3_2 x3_3];
+
+num_points_total = 1;
 % for i = 1:num_points
 for i = 1:num_points_total
     
@@ -96,11 +99,19 @@ for i = 1:num_points_total
     % T_3d = [x4(i), y4(i), z4(i)];
 
     %square
-    T_3d = [x3(i), y3(i), z3(i)];
-    % T_3d = [100,100,100];
-    
+%     T_3d = [x3(i), y3(i), z3(i)];
+    T_3d = [-225,0,100];
+ 
     T_angle_initial_guess = -pi;
-    [theta1, theta2, theta3, theta4] = IK(T_3d, T_angle_initial_guess, 77, AB, BC, CT, [-pi,pi],jointA_limit, jointB_limit, jointC_limit);
+    [theta1, theta2, theta3, theta4] = IK(T_3d, T_angle_initial_guess, L1, L2, L3, L4, ...
+        joint1_limit, joint2_limit, joint3_limit, joint4_limit);
+    theta1 = deg2rad(180);
+    [theta1, theta2, theta3, theta4] = ServoAnglesToIkAngles(theta1, theta2, theta3, theta4);
+    
+    fprintf('Joint1 ik angle: %f\n', rad2deg(theta1));
+    fprintf('Joint2 ik angle: %f\n', rad2deg(theta2));
+    fprintf('Joint3 ik angle: %f\n', rad2deg(theta3));
+    fprintf('Joint4 ik angle: %f\n', rad2deg(theta4));
 
 
     % Find all graphics objects in the current axis
@@ -166,6 +177,14 @@ function [joint1_angle, joint2_angle, joint3_angle, joint4_angle] = ...
     iteration = 1;
     avoid_sigularity_mode = 0;
 
+    [joint1_limit_new, joint2_limit_new, joint3_limit_new, joint4_limit_new] = ...
+        servoLimitesToIkLimits(joint1_limit, joint2_limit, joint3_limit, joint4_limit);
+
+    fprintf('joint1_limit_new: %f, %f\n', joint1_limit_new(1), joint1_limit_new(2));
+    fprintf('joint2_limit_new: %f, %f\n', joint2_limit_new(1), joint2_limit_new(2));
+    fprintf('joint3_limit_new: %f, %f\n', joint3_limit_new(1), joint3_limit_new(2));
+    fprintf('joint4_limit_new: %f, %f\n', joint4_limit_new(1), joint4_limit_new(2));
+
     joint1_angle = atan2(T_3d(2), T_3d(1));
     T_2d = [sqrt(T_3d(1)^2 + T_3d(2)^2), T_3d(3)-L12];
 
@@ -193,18 +212,22 @@ function [joint1_angle, joint2_angle, joint3_angle, joint4_angle] = ...
             end
             joint4_angle = T_angle_initial_guess-joint2_angle-joint3_angle;
 
-            if joint2_angle < joint2_limit(1) || joint2_angle > joint2_limit(2) || ...
-                joint3_angle < joint3_limit(1) || joint3_angle > joint3_limit(2) || ...
-                joint4_angle < joint4_limit(1) || joint4_angle > joint4_limit(2)
+            if  joint2_angle < joint2_limit_new(1) || joint2_angle > joint2_limit_new(2) || ...
+                joint3_angle < joint3_limit_new(1) || joint3_angle > joint3_limit_new(2) || ...
+                joint4_angle < joint4_limit_new(1) || joint4_angle > joint4_limit_new(2)
 
                 fprintf('Joint angle out of limit in iteration: %d\n', iteration);
                 T_angle_initial_guess = T_angle_initial_guess + deg2rad(T_angle_guess_step);
                 iteration = iteration + 1;
                 continue;
             else
+                [joint1_angle, joint2_angle, joint3_angle, joint4_angle] = ...
+                    ikAnglesToServoAngles(joint1_angle, joint2_angle, joint3_angle, joint4_angle);
                 fprintf('T_angle_initial_guess: %f\n', T_angle_initial_guess);
-                fprintf('joint2_angle: %f, joint3_angle: %f, joint4_angle: %f\n', ...
-                    (joint2_angle), (joint3_angle), (joint4_angle));
+                fprintf('Joint1 servo angle: %f\n', rad2deg(joint1_angle));
+                fprintf('Joint2 servo angle: %f\n', rad2deg(joint2_angle));
+                fprintf('Joint3 servo angle: %f\n', rad2deg(joint3_angle));
+                fprintf('Joint4 servo angle: %f\n', rad2deg(joint4_angle));
                 break;
 %                 if avoid_sigularity_mode == 1
 %                     if sign(joint3_angle) == sign(old_joint3_angle)
@@ -239,6 +262,31 @@ function dh_matrix_3d = dh_matrix_3d(a, alpha, d, theta)
          sin(theta), cos(theta)*cos(alpha), -cos(theta)*sin(alpha), a*sin(theta);
          0, sin(alpha), cos(alpha), d;
          0, 0, 0, 1];
+end
+
+function [joint1_limit_new, joint2_limit_new, joint3_limit_new, joint4_limit_new] = servoLimitesToIkLimits(joint1_limit, joint2_limit, joint3_limit, joint4_limit)
+    joint1_limit_new = [joint1_limit(1), joint1_limit(2)];
+    joint2_limit_new = [joint2_limit(1) - pi/2, joint2_limit(2) - pi/2];
+    joint3_limit_new = [joint3_limit(1) - pi, joint3_limit(2) - pi];
+    joint4_limit_new = [joint4_limit(1) - pi, joint4_limit(2) - pi];
+end
+
+function [joint1_angle, joint2_angle, joint3_angle, joint4_angle] = ikAnglesToServoAngles(joint1_angle, joint2_angle, joint3_angle, joint4_angle)
+    if joint1_angle == 0
+        joint1_angle = 180;
+    else
+        joint1_angle = joint1_angle;
+    end
+    joint2_angle = 3*pi/2 - joint2_angle;
+    joint3_angle = pi - joint3_angle;
+    joint4_angle = pi - joint4_angle;
+end
+
+function [joint1_angle, joint2_angle, joint3_angle, joint4_angle] = ServoAnglesToIkAngles(joint1_angle, joint2_angle, joint3_angle, joint4_angle)
+    joint1_angle = joint1_angle;
+    joint2_angle = -joint2_angle + 3*pi/2;
+    joint3_angle = -joint3_angle + pi;
+    joint4_angle = -joint4_angle + pi;
 end
 
 function [x, y] = generateSquarePoints(C, side_length, num_points_per_side)
