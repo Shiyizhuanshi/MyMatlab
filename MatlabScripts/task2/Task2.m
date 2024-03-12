@@ -170,6 +170,7 @@ end
 
 dxl_present_position2 = read4ByteTxRx(port_num, PROTOCOL_VERSION, DXL_ID2, ADDR_PRO_PRESENT_POSITION);
 
+startPos = [];
 
 write4ByteTxRx(port_num, PROTOCOL_VERSION, DXL_ID1, ADDR_PRO_GOAL_POSITION,2045);
 pause(1)
@@ -210,33 +211,33 @@ T_3d = [-75, 200, 80];
 
 [joint1_angle, joint2_angle, joint3_angle, joint4_angle] = IK(T_3d, -pi/2, L1, L2, L3, L4, ...
                                                                 joint1_limit, joint2_limit, joint3_limit, joint4_limit);
+
 write4ByteTxRx(port_num, PROTOCOL_VERSION, DXL_GRIP, ADDR_PRO_GOAL_POSITION,grip_open);
 pause(1)
-write4ByteTxRx(port_num, PROTOCOL_VERSION, DXL_ID1, ADDR_PRO_GOAL_POSITION,rad2deg(joint1_angle)/0.088);
-write4ByteTxRx(port_num, PROTOCOL_VERSION, DXL_ID2, ADDR_PRO_GOAL_POSITION,(rad2deg(joint2_angle - thetaOffset))/0.088);
-write4ByteTxRx(port_num, PROTOCOL_VERSION, DXL_ID3, ADDR_PRO_GOAL_POSITION,(rad2deg(joint3_angle + thetaOffset))/0.088);
-write4ByteTxRx(port_num, PROTOCOL_VERSION, DXL_ID4, ADDR_PRO_GOAL_POSITION,rad2deg(joint4_angle)/0.088);
+moveToAngles(joint1_angle, joint2_angle - thetaOffset, joint3_angle + thetaOffset, joint4_angle, grip_open);
+pause(3)
 
-
-fprintf('waiting to reach desired position\n');
-pause(10);
-fprintf('plotting the robot arm based on reading\n');
-write4ByteTxRx(port_num, PROTOCOL_VERSION, DXL_GRIP, ADDR_PRO_GOAL_POSITION,grip_close);
-pause(2)
-theta1 = read4ByteTxRx(port_num, PROTOCOL_VERSION, DXL_ID1, ADDR_PRO_PRESENT_POSITION*0.088);
-theta2 = read4ByteTxRx(port_num, PROTOCOL_VERSION, DXL_ID2, (ADDR_PRO_PRESENT_POSITION + thetaOffset)*0.088);
-theta3 = read4ByteTxRx(port_num, PROTOCOL_VERSION, DXL_ID3, (ADDR_PRO_PRESENT_POSITION - thetaOffset)*0.088);
-theta4 = read4ByteTxRx(port_num, PROTOCOL_VERSION, DXL_ID4, ADDR_PRO_PRESENT_POSITION*0.088);
+% fprintf('waiting to reach desired position\n');
+% pause(10);
+% fprintf('plotting the robot arm based on reading\n');
+% write4ByteTxRx(port_num, PROTOCOL_VERSION, DXL_GRIP, ADDR_PRO_GOAL_POSITION,grip_close);
+% pause(2)
+% theta1 = read4ByteTxRx(port_num, PROTOCOL_VERSION, DXL_ID1, ADDR_PRO_PRESENT_POSITION*0.088);
+% theta2 = read4ByteTxRx(port_num, PROTOCOL_VERSION, DXL_ID2, (ADDR_PRO_PRESENT_POSITION + thetaOffset)*0.088);
+% theta3 = read4ByteTxRx(port_num, PROTOCOL_VERSION, DXL_ID3, (ADDR_PRO_PRESENT_POSITION - thetaOffset)*0.088);
+% theta4 = read4ByteTxRx(port_num, PROTOCOL_VERSION, DXL_ID4, ADDR_PRO_PRESENT_POSITION*0.088);
 
 T_3d = [-125, 125, 80];
 
 [joint1_angle, joint2_angle, joint3_angle, joint4_angle] = IK(T_3d, -pi/2, L1, L2, L3, L4, ...
                                                                 joint1_limit, joint2_limit, joint3_limit, joint4_limit);
 
-write4ByteTxRx(port_num, PROTOCOL_VERSION, DXL_ID1, ADDR_PRO_GOAL_POSITION,rad2deg(joint1_angle)/0.088);
-write4ByteTxRx(port_num, PROTOCOL_VERSION, DXL_ID2, ADDR_PRO_GOAL_POSITION,(rad2deg(joint2_angle - thetaOffset))/0.088);
-write4ByteTxRx(port_num, PROTOCOL_VERSION, DXL_ID3, ADDR_PRO_GOAL_POSITION,(rad2deg(joint3_angle + thetaOffset))/0.088);
-write4ByteTxRx(port_num, PROTOCOL_VERSION, DXL_ID4, ADDR_PRO_GOAL_POSITION,rad2deg(joint4_angle)/0.088);
+moveToAngles(joint1_angle, joint2_angle - thetaOffset, joint3_angle + thetaOffset, joint4_angle, grip_open);
+
+% write4ByteTxRx(port_num, PROTOCOL_VERSION, DXL_ID1, ADDR_PRO_GOAL_POSITION,rad2deg(joint1_angle)/0.088);
+% write4ByteTxRx(port_num, PROTOCOL_VERSION, DXL_ID2, ADDR_PRO_GOAL_POSITION,(rad2deg(joint2_angle - thetaOffset))/0.088);
+% write4ByteTxRx(port_num, PROTOCOL_VERSION, DXL_ID3, ADDR_PRO_GOAL_POSITION,(rad2deg(joint3_angle + thetaOffset))/0.088);
+% write4ByteTxRx(port_num, PROTOCOL_VERSION, DXL_ID4, ADDR_PRO_GOAL_POSITION,rad2deg(joint4_angle)/0.088);
 
 fprintf('waiting to reach desired position\n');
 pause(10);
@@ -453,12 +454,12 @@ function dh_matrix_3d = dh_matrix_3d(a, alpha, d, theta)
          0, 0, 0, 1];
 end
 
-function [joint1_limit_new, joint2_limit_new, joint3_limit_new, joint4_limit_new] = servoLimitesToIkLimits(joint1_limit, joint2_limit, joint3_limit, joint4_limit)
-    joint1_limit_new = [joint1_limit(1), joint1_limit(2)];
-    joint2_limit_new = [joint2_limit(1) - pi/2, joint2_limit(2) - pi/2];
-    joint3_limit_new = [joint3_limit(1) - pi, joint3_limit(2) - pi];
-    joint4_limit_new = [joint4_limit(1) - pi, joint4_limit(2) - pi];
-end
+% function [joint1_limit_new, joint2_limit_new, joint3_limit_new, joint4_limit_new] = servoLimitesToIkLimits(joint1_limit, joint2_limit, joint3_limit, joint4_limit)
+%     joint1_limit_new = [joint1_limit(1), joint1_limit(2)];
+%     joint2_limit_new = [3*pi/2 - joint2_limit(1), 3*pi/2 - joint2_limit(2)];
+%     joint3_limit_new = [pi/2 - joint3_limit(2), pi/2 - joint3_limit(1)];
+%     joint4_limit_new = [pi - joint4_limit(2), pi - joint4_limit(1)];
+% end
 
 function [joint1_angle, joint2_angle, joint3_angle, joint4_angle] = ikAnglesToServoAngles(joint1_angle, joint2_angle, joint3_angle, joint4_angle)
     fprintf('ik_joint1_angle: %f\n', rad2deg(joint1_angle));
@@ -501,3 +502,10 @@ function [x, y] = generateSquarePoints(C, side_length, num_points_per_side)
     y = [y, linspace(C(2) + side_length, C(2), num_points_per_side)];
 end
 
+function moveToAngles(joint1_angle, joint2_angle, joint3_angle, joint4_angle, grip_angle)
+    write4ByteTxRx(port_num, PROTOCOL_VERSION, DXL_ID1, ADDR_PRO_GOAL_POSITION, rad2deg(joint1_angle)/0.088);
+    write4ByteTxRx(port_num, PROTOCOL_VERSION, DXL_ID2, ADDR_PRO_GOAL_POSITION, rad2deg(joint2_angle)/0.088);
+    write4ByteTxRx(port_num, PROTOCOL_VERSION, DXL_ID3, ADDR_PRO_GOAL_POSITION, rad2deg(joint3_angle)/0.088);
+    write4ByteTxRx(port_num, PROTOCOL_VERSION, DXL_ID4, ADDR_PRO_GOAL_POSITION, rad2deg(joint4_angle)/0.088);
+    write4ByteTxRx(port_num, PROTOCOL_VERSION, DXL_GRIP, ADDR_PRO_GOAL_POSITION, grip_angle);
+end
