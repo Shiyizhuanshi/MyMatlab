@@ -6,10 +6,10 @@ joint2_limit = [deg2rad(100), deg2rad(330)];
 joint3_limit = [deg2rad(30), deg2rad(330)];
 joint4_limit = [deg2rad(30), deg2rad(330)];
 
-% L1 = 0;
-% L2 = 100;
-% L3 = 100;
-% L4 = 100;
+L1 = 100;
+L2 = 100;
+L3 = 100;
+L4 = 100;
 
 L1 = 77;
 L2 = 130;
@@ -100,10 +100,12 @@ for i = 1:num_points_total
 
     %square
 %     T_3d = [x3(i), y3(i), z3(i)];
-    T_3d = [0,0,300];
+    T_3d = [-200,0,50];
+    % T_3d = [300,0,100];
+    % T_3d = [-200,0,100];
+    % T_3d = [0,0,100];
  
-    T_angle_initial_guess = -pi;
-    [theta1, theta2, theta3, theta4] = IK(T_3d, pi/2, L1, L2, L3, L4, ...
+    [theta1, theta2, theta3, theta4] = IK(T_3d, 0, L1, L2, L3, L4, ...
         joint1_limit, joint2_limit, joint3_limit, joint4_limit);
     [theta1, theta2, theta3, theta4] = ServoAnglesToIkAngles(theta1, theta2, theta3, theta4);
     
@@ -166,7 +168,7 @@ hold off;
 
 function [joint1_angle, joint2_angle, joint3_angle, joint4_angle] = ...
     IK(T_3d, end_ang, L12, L23, L34, L45, joint1_limit, joint2_limit, joint3_limit, joint4_limit)
-    
+    thetaOffset = asin(24/130);
     iteration = 0;
     solutions_array = [];
     stepSize = deg2rad(0.1);
@@ -197,18 +199,18 @@ function [joint1_angle, joint2_angle, joint3_angle, joint4_angle] = ...
         joint4_angle = end_ang - joint2_angle - joint3_angle;
 
         [joint1_angle, joint2_angle, joint3_angle, joint4_angle] = ikAnglesToServoAngles(joint1_angle, joint2_angle, joint3_angle, joint4_angle);
-        if joint1_angle < joint1_limit(1) || joint1_angle > joint1_limit(2) || ...
-            joint2_angle < joint2_limit(1) || joint2_angle > joint2_limit(2) || ...
-            joint3_angle < joint3_limit(1) || joint3_angle > joint3_limit(2) || ...
-            joint4_angle < joint4_limit(1) || joint4_angle > joint4_limit(2)
-            fprintf('Joint angle out of limit\n');
-            fprintf('joint1_angle: %f\n', rad2deg(joint1_angle));
-            fprintf('joint2_angle: %f\n', rad2deg(joint2_angle));
-            fprintf('joint3_angle: %f\n', rad2deg(joint3_angle));
-            fprintf('joint4_angle: %f\n', rad2deg(joint4_angle));
-            end_ang = end_ang + stepSize;
-            continue;
-        end
+        % if joint1_angle < joint1_limit(1) || joint1_angle > joint1_limit(2) || ...
+        %     joint2_angle < joint2_limit(1) || joint2_angle > joint2_limit(2) || ...
+        %     joint3_angle < joint3_limit(1) || joint3_angle > joint3_limit(2) || ...
+        %     joint4_angle < joint4_limit(1) || joint4_angle > joint4_limit(2)
+        %     fprintf('Joint angle out of limit\n');
+        %     fprintf('joint1_angle: %f\n', rad2deg(joint1_angle));
+        %     fprintf('joint2_angle: %f\n', rad2deg(joint2_angle));
+        %     fprintf('joint3_angle: %f\n', rad2deg(joint3_angle));
+        %     fprintf('joint4_angle: %f\n', rad2deg(joint4_angle));
+        %     end_ang = end_ang + stepSize;
+        %     continue;
+        % end
         
         solutions_array = [solutions_array; [joint1_angle, joint2_angle, joint3_angle, joint4_angle]];
     end
@@ -216,7 +218,8 @@ function [joint1_angle, joint2_angle, joint3_angle, joint4_angle] = ...
         error('No solution found');
     end
     fprintf('Number of solutions: %d\n', size(solutions_array, 1));
-    fprintf('First solution:\ntheta1:%f\ntheta2:%f\ntheta3:%f\ntheta4:%f\n', rad2deg(solutions_array(1,1)), rad2deg(solutions_array(1,2)), rad2deg(solutions_array(1,3)), rad2deg(solutions_array(1,4)));
+    fprintf('First solution:\ntheta1:%f\ntheta2:%f\ntheta3:%f\ntheta4:%f\n', ...
+        rad2deg(solutions_array(1,1)), rad2deg(solutions_array(1,2) - thetaOffset), rad2deg(solutions_array(1,3) + thetaOffset), rad2deg(solutions_array(1,4)));
 end
 
 function dh_matrix_2d = dh_matrix_2d(a, alpha, d, theta)
@@ -241,15 +244,22 @@ function [joint1_limit_new, joint2_limit_new, joint3_limit_new, joint4_limit_new
 end
 
 function [joint1_angle, joint2_angle, joint3_angle, joint4_angle] = ikAnglesToServoAngles(joint1_angle, joint2_angle, joint3_angle, joint4_angle)
+    fprintf('ik_joint1_angle: %f\n', rad2deg(joint1_angle));
+    fprintf('ik_joint2_angle: %f\n', rad2deg(joint2_angle));
+    fprintf('ik_joint3_angle: %f\n', rad2deg(joint3_angle));
+    fprintf('ik_joint4_angle: %f\n', rad2deg(joint4_angle));
     joint2_angle = 3*pi/2 - joint2_angle;
-    joint3_angle = pi - joint3_angle;
+    joint3_angle = -joint3_angle + pi/2 ;
     joint4_angle = pi - joint4_angle;
+    fprintf('servo_joint1_angle: %f\n', rad2deg(joint1_angle));
+    fprintf('servo_joint2_angle: %f\n', rad2deg(joint2_angle));
+    fprintf('servo_joint3_angle: %f\n', rad2deg(joint3_angle));
+    fprintf('servo_joint4_angle: %f\n', rad2deg(joint4_angle));
 end
 
 function [joint1_angle, joint2_angle, joint3_angle, joint4_angle] = ServoAnglesToIkAngles(joint1_angle, joint2_angle, joint3_angle, joint4_angle)
-    joint1_angle = joint1_angle;
     joint2_angle = -joint2_angle + 3*pi/2;
-    joint3_angle = -joint3_angle + pi;
+    joint3_angle = -joint3_angle + pi/2;
     joint4_angle = -joint4_angle + pi;
 end
 
