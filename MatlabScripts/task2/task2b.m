@@ -123,13 +123,20 @@ GRIP_CLOSE = 1000;
 GRIP_OPEN = 2000;
 
 % start position
-move_robot([-250, 0, 205, -pi/2], port_num, PROTOCOL_VERSION, ADDR_PRO_GOAL_POSITION, 2);
+move_robot([-250, 0, 205, 0], port_num, PROTOCOL_VERSION, ADDR_PRO_GOAL_POSITION, 2);
 MoveGripper(port_num, PROTOCOL_VERSION, DXL_GRIP, ADDR_PRO_GOAL_POSITION, GRIP_OPEN, COMM_SUCCESS);
 %<--------------------------------------------------------------------------------------------------------------------------->
 % given desired position and calculate the joint angles
-destinations = {[-250, 0, 205, -pi/2], [-250, 0, 205, -pi/2]};
+destinations = {[-75, 200, 205, -pi/2, 3], [-250, 0, 60, -pi/2, 3], GRIP_CLOSE, [-250, 0, 120, -pi/2, 3], [-250, 0, 120, 0, 3], GRIP_OPEN...
+                [-250, 0, 205, -pi/2, 3], [-250, 0, 205, 0, 3], GRIP_OPEN, [-250, 0, 205, 0, 3]};
 
-
+for i = 1:length(destinations)
+    if length(destinations{i}) == 5
+        move_robot(destinations{i}(1:4), port_num, PROTOCOL_VERSION, ADDR_PRO_GOAL_POSITION, destinations{i}(5));
+    else
+        MoveGripper(port_num, PROTOCOL_VERSION, DXL_GRIP, ADDR_PRO_GOAL_POSITION, destinations{i}, COMM_SUCCESS);
+    end
+end
 
 % Close port
 closePort(port_num);
