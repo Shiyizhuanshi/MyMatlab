@@ -80,7 +80,7 @@ x3 = [z3_1 x3_2 y3_3];
 y3 = [y3_1 y3_2 z3_3];
 z3 = [x3_1 z3_2 x3_3];
 
-num_points_total = 1;
+% num_points_total = 1;
 % for i = 1:num_points
 for i = 1:num_points_total
     
@@ -93,10 +93,10 @@ for i = 1:num_points_total
     % T_3d = [x4(i), y4(i), z4(i)];
 
     %square
-    %T_3d = [x3(i), y3(i), z3(i)];
+    T_3d = [x3(i), y3(i), z3(i)];
     % T_3d = [-200,0,50];
     % T_3d = [300,0,100];
-    T_3d = [-200,0,100];
+    % T_3d = [-200,0,100];
     % T_3d = [0,0,100];
  
     [theta1, theta2, theta3, theta4] = IK(T_3d, 0, L1, L2, L3, L4, ...

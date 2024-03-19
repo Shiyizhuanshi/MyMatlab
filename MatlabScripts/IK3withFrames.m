@@ -37,7 +37,7 @@ num_points_per_side = num_points/4;
 
 %left bottom corner
 C_1 = [50, -100];
-C_2 = [-100, -100];
+C_2 = [-120, -120];
 C_3 = [-100, -100];
 
 
@@ -57,13 +57,14 @@ z4 = linspace(77, 77, num_points);
 % fprintf('theta1: %f, theta2: %f, theta3: %f, theta4: %f\n', theta1, theta2, theta3, theta4);
 
 
-default_fig_position = [500, 300, 1200, 1000]; % [left, bottom, width, height]
 
 % Initialize figure
+frameLength = 30;
+default_fig_position = [500, 300, 1200, 1000]; % [left, bottom, width, height]
 figure('Position', default_fig_position);
 hold on;
 axis equal;
-axis([-500, 500, -500, 500, -500, 500]);
+axis([-300, 300, -300, 300, -300, 300]);
 % Set the view perspective for 3D
 view(3);
 grid on;
@@ -80,7 +81,7 @@ x3 = [z3_1 x3_2 y3_3];
 y3 = [y3_1 y3_2 z3_3];
 z3 = [x3_1 z3_2 x3_3];
 
-num_points_total = 1;
+% num_points_total = 1;
 % for i = 1:num_points
 for i = 1:num_points_total
     
@@ -93,10 +94,10 @@ for i = 1:num_points_total
     % T_3d = [x4(i), y4(i), z4(i)];
 
     %square
-    %T_3d = [x3(i), y3(i), z3(i)];
+    T_3d = [x3(i), y3(i), z3(i)];
     % T_3d = [-200,0,50];
     % T_3d = [300,0,100];
-    T_3d = [-200,0,100];
+    % T_3d = [-200,0,100];
     % T_3d = [0,0,100];
  
     [theta1, theta2, theta3, theta4] = IK(T_3d, 0, L1, L2, L3, L4, ...
@@ -110,7 +111,7 @@ for i = 1:num_points_total
 
 
     % Find all graphics objects in the current axis
-    all_objects = findobj(gca, 'Type', 'line', '-or', 'Type', 'text', '-or', 'Type', 'surface', '-or', 'Type', 'patch', '-or', 'Type', 'hggroup');
+    all_objects = findobj(gca, 'Type', 'line', '-or', 'Type', 'text', '-or', 'Type', 'surface', '-or', 'Type', 'patch', '-or', 'Type', 'hggroup', '-or', 'Type', 'quiver');
 
     % Exclude the end effector from the list of objects to delete
     end_effector_object = findobj(all_objects, 'Tag', 'EndEffector');
@@ -157,6 +158,62 @@ for i = 1:num_points_total
     % Plot end effector as a red hollow circle
     plot3(end_effector_position(1), end_effector_position(2), end_effector_position(3), color, 'MarkerSize', 10, 'MarkerFaceColor', 'w', 'Tag', 'EndEffector');
     
+    % Plot XYZ frames at each joint
+    % Joint 1
+    quiver3(0, 0, 0, frameLength, 0, 0, 'g', 'LineWidth', 2); % X-axis
+    quiver3(0, 0, 0, 0, frameLength, 0, 'b', 'LineWidth', 2); % Y-axis
+    quiver3(0, 0, 0, 0, 0, frameLength, 'r', 'LineWidth', 2); % Z-axis
+
+    % Joint 2
+    joint2_origin = T1 * [0; 0; 0; 1];
+    joint2_x_axis = T1 * [frameLength; 0; 0; 1];
+    joint2_y_axis = T1 * [0; frameLength; 0; 1];
+    joint2_z_axis = T1 * [0; 0; frameLength; 1];
+    quiver3(joint2_origin(1), joint2_origin(2), joint2_origin(3), joint2_x_axis(1) - joint2_origin(1), joint2_x_axis(2) - joint2_origin(2), joint2_x_axis(3) - joint2_origin(3), 'g', 'LineWidth', 2); % X-axis
+    quiver3(joint2_origin(1), joint2_origin(2), joint2_origin(3), joint2_y_axis(1) - joint2_origin(1), joint2_y_axis(2) - joint2_origin(2), joint2_y_axis(3) - joint2_origin(3), 'b', 'LineWidth', 2); % Y-axis
+    quiver3(joint2_origin(1), joint2_origin(2), joint2_origin(3), joint2_z_axis(1) - joint2_origin(1), joint2_z_axis(2) - joint2_origin(2), joint2_z_axis(3) - joint2_origin(3), 'r', 'LineWidth', 2); % Z-axis
+
+    % Joint 3
+    joint3_origin = T1 * T2 * [0; 0; 0; 1];
+    joint3_x_axis = T1 * T2 * [frameLength; 0; 0; 1];
+    joint3_y_axis = T1 * T2 * [0; frameLength; 0; 1];
+    joint3_z_axis = T1 * T2 * [0; 0; frameLength; 1];
+    quiver3(joint3_origin(1), joint3_origin(2), joint3_origin(3), joint3_x_axis(1) - joint3_origin(1), joint3_x_axis(2) - joint3_origin(2), joint3_x_axis(3) - joint3_origin(3), 'g', 'LineWidth', 2); % X-axis
+    quiver3(joint3_origin(1), joint3_origin(2), joint3_origin(3), joint3_y_axis(1) - joint3_origin(1), joint3_y_axis(2) - joint3_origin(2), joint3_y_axis(3) - joint3_origin(3), 'b', 'LineWidth', 2); % Y-axis
+    quiver3(joint3_origin(1), joint3_origin(2), joint3_origin(3), joint3_z_axis(1) - joint3_origin(1), joint3_z_axis(2) - joint3_origin(2), joint3_z_axis(3) - joint3_origin(3), 'r', 'LineWidth', 2); % Z-axis
+
+    % Joint 4
+    joint4_origin = T1 * T2 * T3 * [0; 0; 0; 1];
+    joint4_x_axis = T1 * T2 * T3 * [frameLength; 0; 0; 1];
+    joint4_y_axis = T1 * T2 * T3 * [0; frameLength; 0; 1];
+    joint4_z_axis = T1 * T2 * T3 * [0; 0; frameLength; 1];
+    quiver3(joint4_origin(1), joint4_origin(2), joint4_origin(3), joint4_x_axis(1) - joint4_origin(1), joint4_x_axis(2) - joint4_origin(2), joint4_x_axis(3) - joint4_origin(3), 'g', 'LineWidth', 2); % X-axis
+    quiver3(joint4_origin(1), joint4_origin(2), joint4_origin(3), joint4_y_axis(1) - joint4_origin(1), joint4_y_axis(2) - joint4_origin(2), joint4_y_axis(3) - joint4_origin(3), 'b', 'LineWidth', 2); % Y-axis
+    quiver3(joint4_origin(1), joint4_origin(2), joint4_origin(3), joint4_z_axis(1) - joint4_origin(1), joint4_z_axis(2) - joint4_origin(2), joint4_z_axis(3) - joint4_origin(3), 'r', 'LineWidth', 2); % Z-axis
+    
+   % Calculate end effector transformation matrix
+    T_end_effector = T1 * T2 * T3 * T4;
+
+    % Extract end effector position and orientation from transformation matrix
+    end_effector_position = T_end_effector(1:3, 4);
+    end_effector_x_axis = T_end_effector * [frameLength; 0; 0; 1];
+    end_effector_y_axis = T_end_effector * [0; frameLength; 0; 1];
+    end_effector_z_axis = T_end_effector * [0; 0; frameLength; 1];
+
+    % Plot XYZ frame for end effector
+    quiver3(end_effector_position(1), end_effector_position(2), end_effector_position(3), ...
+        end_effector_x_axis(1) - end_effector_position(1), ...
+        end_effector_x_axis(2) - end_effector_position(2), ...
+        end_effector_x_axis(3) - end_effector_position(3), 'r', 'LineWidth', 2); % X-axis
+    quiver3(end_effector_position(1), end_effector_position(2), end_effector_position(3), ...
+        end_effector_y_axis(1) - end_effector_position(1), ...
+        end_effector_y_axis(2) - end_effector_position(2), ...
+        end_effector_y_axis(3) - end_effector_position(3), 'g', 'LineWidth', 2); % Y-axis
+    quiver3(end_effector_position(1), end_effector_position(2), end_effector_position(3), ...
+        end_effector_z_axis(1) - end_effector_position(1), ...
+        end_effector_z_axis(2) - end_effector_position(2), ...
+        end_effector_z_axis(3) - end_effector_position(3), 'b', 'LineWidth', 2); % Z-axis
+   
     % Update the figure window
     drawnow;
 
@@ -249,6 +306,7 @@ function [joint1_angle, joint2_angle, joint3_angle, joint4_angle] = ikAnglesToSe
     fprintf('ik_joint2_angle: %f\n', rad2deg(joint2_angle));
     fprintf('ik_joint3_angle: %f\n', rad2deg(joint3_angle));
     fprintf('ik_joint4_angle: %f\n', rad2deg(joint4_angle));
+    joint1_angle = joint1_angle + 2*pi;
     joint2_angle = 3*pi/2 - joint2_angle;
     joint3_angle = -joint3_angle + pi/2 ;
     joint4_angle = pi - joint4_angle;
@@ -259,6 +317,7 @@ function [joint1_angle, joint2_angle, joint3_angle, joint4_angle] = ikAnglesToSe
 end
 
 function [joint1_angle, joint2_angle, joint3_angle, joint4_angle] = ServoAnglesToIkAngles(joint1_angle, joint2_angle, joint3_angle, joint4_angle)
+    joint1_angle = joint1_angle - 2*pi;
     joint2_angle = -joint2_angle + 3*pi/2;
     joint3_angle = -joint3_angle + pi/2;
     joint4_angle = -joint4_angle + pi;
